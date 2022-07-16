@@ -1,0 +1,28 @@
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: pre-function
+  namespace: <namespace-existent>
+config:
+  access:
+  - |2
+      local function isempty(s)
+        return s == nil or s == ''
+      end
+
+      local jwt = kong.request.get_header("Authorization") 
+      local jwtParam = kong.request.get_query_arg("jwt")
+      local jwtCookie = kong.request.get_header("Cookie")
+
+      if isempty(jwt) and isempty(jwtParam) and isempty(jwtCookie) then
+        return kong.response.exit(302, 'page moved - redirecting...', {
+          ["Location"] = "https://google.com",
+      })
+      end
+      
+      local jwtFinally = (not isempty(jwt) and jwt or jwtParam  )
+      
+      kong.response.set_header("Set-Cookie", "jwt_cookie_auth=" .. jwtFinally)
+
+plugin: pre-function
